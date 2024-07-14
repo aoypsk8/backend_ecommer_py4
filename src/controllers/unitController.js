@@ -26,7 +26,7 @@ class UnitController {
                 connection.end();
                 return res.json({
                     status: "ok",
-                    message: "Unit created successfully",
+                    message: "ສ້າງຫົວຫນ່ວຍສຳເລັດ",
                     data: data,
                 });
             });

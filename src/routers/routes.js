@@ -67,6 +67,9 @@ router.post("/order/create",upload.single('image'),OrderProductController.create
 router.get("/order/getAll",OrderProductController.getAllOrders); 
 router.get("/order/getOrderToday",OrderProductController.getOrderToday); 
 router.put('/order/update/:order_id',OrderProductController.updateOrder); 
+router.get('/orders/getByCustomer/:Cus_ID', OrderProductController.getOrdersByCustomer);
+router.get('/orders/getByID/:order_id', OrderProductController.getOrderById);
+
 
 //======================= SaleController =============================
 router.post("/sale/create",SaleProductController.createSale); 
