@@ -102,6 +102,32 @@ class ProductController {
             return res.json({ message: error.message });
         }
     }
+    static async getAllProductsWhere(req, res) {
+        try {
+            const connection = connectToMySQL();
+            const getAllProductsQuery = `
+            SELECT p.*, pt.Product_Type_Name 
+            FROM tb_products AS p 
+            LEFT JOIN tb_products_type AS pt 
+            ON p.Product_Type_ID = pt.Product_Type_ID 
+            WHERE p.ProductQty > 0 
+            ORDER BY RAND()
+        `;
+
+
+            // Execute query to get all products
+            connection.query(getAllProductsQuery, (error, results) => {
+                if (error) {
+                    return res.json({ message: "Failed to fetch products", error: error });
+                }
+
+                connection.end();
+                return res.json({ status: "ok", message: "All products fetched successfully", data: results });
+            });
+        } catch (error) {
+            return res.json({ message: error.message });
+        }
+    }
 
     static async updateProduct(req, res) {
         try {

@@ -26,7 +26,7 @@ class ProductTypeController {
                     if (error) {
                         return res.json({
                             message: "ເກີດຂໍ້ຜິດພາດ",
-                            error:error
+                            error: error
                         });
                     }
                     const data = results[0];
@@ -72,7 +72,7 @@ class ProductTypeController {
             return res.json({ message: error.message });
         }
     }
-    
+
 
 
 
@@ -82,9 +82,9 @@ class ProductTypeController {
             const { Product_Type_ID } = req.params;
             const { Product_Type_Name } = req.body;
             const Profile_img = req.file ? req.file.path : null;
-       
 
-            if ( !Product_Type_Name) {
+
+            if (!Product_Type_Name) {
                 return res.json({ message: "ກະລຸນາປ້ອນຂໍ້ມູນທີ່ຕ້ອງການອັບເດດ!" });
             }
 
@@ -122,7 +122,30 @@ class ProductTypeController {
     static async getAllType(req, res) {
         try {
             const connection = connectToMySQL();
-            const getAllTypesQuery = 'SELECT * FROM tb_products_type';
+            // const getAllTypesQuery = 'SELECT * FROM tb_products_type';
+            // const getAllTypesQuery = 'SELECT * FROM tb_products_type LEFT JOIN tb_products ON tb_products.Product_Type_ID = tb_products_type.Product_Type_ID';
+            const getAllTypesQuery = `
+            SELECT 
+                tb_products_type.Product_Type_ID,
+                tb_products_type.Product_Type_Name,
+                tb_products_type.timeStamp,
+                tb_products_type.img,
+                COUNT(tb_products.Product_ID) AS Product_Count,
+                SUM(tb_products.ProductQty) AS Total_ProductQty
+            FROM 
+                tb_products_type
+            LEFT JOIN 
+                tb_products 
+            ON 
+                tb_products.Product_Type_ID = tb_products_type.Product_Type_ID
+            GROUP BY 
+                tb_products_type.Product_Type_ID, 
+                tb_products_type.Product_Type_Name,
+                tb_products_type.timeStamp,
+                tb_products_type.img
+        `;
+        
+
             connection.query(getAllTypesQuery, (error, results) => {
                 if (error) {
                     console.log(error);
@@ -139,7 +162,7 @@ class ProductTypeController {
             return res.json({ message: error.message });
         }
     }
-   
+
 }
 
 module.exports = ProductTypeController;

@@ -46,6 +46,7 @@ router.get("/unit/getAll",UnitController.getAllUnits);
 router.post("/product/create",upload.single('image'),ProductController.createProduct); 
 router.delete("/product/delete/:Product_ID",ProductController.deleteProduct); 
 router.get("/product/getAll",ProductController.getAllProducts); 
+router.get("/product/getAllWhere",ProductController.getAllProductsWhere); 
 router.get("/product/getNew",ProductController.getNewestProducts); 
 router.get("/product/getProductByType/:Product_Type_ID",ProductController.getAllByTypeProducts); 
 router.put('/product/update/:Product_ID', upload.single('image'), ProductController.updateProduct); 
@@ -64,6 +65,7 @@ router.put('/import/update/:Ip_ID',ImportProductController.updateImport);
 
 //======================= OrderController =============================
 router.post("/order/create",upload.single('image'),OrderProductController.createOrder); 
+router.post("/order/sellFrontOfStore",OrderProductController.createInStoreOrder); 
 router.get("/order/getAll",OrderProductController.getAllOrders); 
 router.get("/order/getOrderToday",OrderProductController.getOrderToday); 
 router.put('/order/update/:order_id',OrderProductController.updateOrder); 

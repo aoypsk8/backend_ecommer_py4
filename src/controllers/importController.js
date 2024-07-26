@@ -23,26 +23,59 @@ class ImportController {
             const dateNow = Date.now();
             const currentDate = new Date(dateNow);
 
-            const insertQuery = `INSERT INTO tb_import_product (Emp_ID,Pro_name, Date_received, ReceivedQty, Sub_Price, Price_Total,Sl_ID) VALUES (?,?,?,?,?,?,?)`;
-            connection.query(
-                insertQuery,
-                [Emp_ID, Pro_name, currentDate, ReceivedQty, Sub_Price, total, Sl_ID],
-                async (error, results) => {
-                    if (error) {
-                        return res.json({
-                            message: "Database error",
-                            error: error,
-                        });
-                    }
-                    const data = results[0];
-                    connection.end();
-                    return res.json({
-                        status: "ok",
-                        message: "Import product created successfully",
-                        data: data,
-                    });
+            // Check if the product already exists
+            const checkQuery = "SELECT * FROM tb_import_product WHERE Pro_name = ? AND Sl_ID = ?";
+            connection.query(checkQuery, [Pro_name, Sl_ID], (checkError, checkResults) => {
+                if (checkError) {
+                    return res.json({ message: "Database error", error: checkError });
                 }
-            );
+
+                if (checkResults.length > 0) {
+                    // Product exists, update it
+                    const existingProduct = checkResults[0];
+                    const newReceivedQty = existingProduct.ReceivedQty + receivedQtyInt;
+                    const newTotal = newReceivedQty * subPriceInt;
+
+                    const updateQuery = `
+                        UPDATE tb_import_product 
+                        SET Emp_ID = ?, ReceivedQty = ?, Sub_Price = ?, Price_Total = ?, Date_received = ? 
+                        WHERE Ip_ID = ?`;
+                    connection.query(
+                        updateQuery,
+                        [Emp_ID, newReceivedQty, subPriceInt, newTotal, currentDate, existingProduct.Ip_ID],
+                        (updateError, updateResults) => {
+                            if (updateError) {
+                                return res.json({ message: "Database error", error: updateError });
+                            }
+                            connection.end();
+                            return res.json({
+                                status: "ok",
+                                message: "Import product updated successfully",
+                            });
+                        }
+                    );
+                } else {
+                    // Product does not exist, insert it
+                    const insertQuery = `
+                        INSERT INTO tb_import_product 
+                        (Emp_ID, Pro_name, Date_received, ReceivedQty, Sub_Price, Price_Total, Sl_ID) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)`;
+                    connection.query(
+                        insertQuery,
+                        [Emp_ID, Pro_name, currentDate, receivedQtyInt, subPriceInt, total, Sl_ID],
+                        (insertError, insertResults) => {
+                            if (insertError) {
+                                return res.json({ message: "Database error", error: insertError });
+                            }
+                            connection.end();
+                            return res.json({
+                                status: "ok",
+                                message: "Import product created successfully",
+                            });
+                        }
+                    );
+                }
+            });
         } catch (error) {
             return res.json({ message: error.message });
         }

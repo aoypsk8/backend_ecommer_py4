@@ -78,7 +78,7 @@ class incomeAndExpendController {
     static async getOutcome(req, res) {
         try {
             const connection = connectToMySQL();
-            const getAllImportsQuery = `SELECT Ip_ID,Date_received,Price_Total FROM tb_import_product`;
+            const getAllImportsQuery = `SELECT * FROM tb_import_product JOIN tb_suppliers ON tb_import_product.Sl_ID = tb_suppliers.Sl_ID`;
 
             connection.query(getAllImportsQuery, (error, results) => {
                 connection.end();

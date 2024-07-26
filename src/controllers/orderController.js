@@ -2,6 +2,92 @@ const connectToMySQL = require('../utils/db');
 const cloudinary = require('../utils/couldinary');
 const SaleController = require('./saleController');
 class OrderController {
+    static async createInStoreOrder(req, res) {
+        try {
+            const connection = connectToMySQL();
+            const { Cus_ID, Product, phone } = req.body;
+
+            // Log the incoming Product value for debugging
+            console.log("Incoming Product value:", Product);
+
+            // Check if Product is defined and not an empty string
+            if (!Product || Product.trim() === "") {
+                return res.json({ message: "Product field is required and should not be empty." });
+            }
+
+            // Parse Product from string to array of objects
+            let parsedProduct;
+            try {
+                parsedProduct = JSON.parse(Product);
+            } catch (parseError) {
+                return res.json({ message: "Invalid JSON format for Product.", error: parseError.message });
+            }
+
+            // Check if parsedProduct is an array
+            if (!Array.isArray(parsedProduct)) {
+                return res.json({ message: "Products should be provided as an array." });
+            }
+
+            // Validation checks for required fields
+            if (!Cus_ID || !phone) {
+                return res.json({ message: "Please enter all required data!" });
+            }
+
+            // SQL query to insert a new order
+            const insertOrderQuery = `INSERT INTO orders (Cus_ID, status) VALUES (?, ?)`;
+            const status = false;
+
+            connection.query(insertOrderQuery, [Cus_ID, status], async (error, result) => {
+                if (error) {
+                    return res.json({ message: "Failed to create order", error });
+                }
+
+                const orderId = result.insertId;
+                // Mapping products to orderItems format
+                const orderItems = parsedProduct.map(product => [
+                    orderId,
+                    product.Product_ID,
+                    product.quantity,
+                    product.Price,
+                    phone,
+                    "" // No ImagePay needed
+                ]);
+
+                const orderItemsQuery = 'INSERT INTO order_items (order_id, Product_ID, quantity, Price,  phone, ImagePay) VALUES ?';
+
+                connection.query(orderItemsQuery, [orderItems], (error, results) => {
+                    if (error) {
+                        return res.json({ message: "Database error", error: error });
+                    }
+
+                    // Decrease product stock
+                    const decreaseStockQueries = parsedProduct.map(product => {
+                        return new Promise((resolve, reject) => {
+                            const decreaseStockQuery = 'UPDATE tb_products SET ProductQty = ProductQty - ? WHERE Product_ID = ?';
+                            connection.query(decreaseStockQuery, [product.quantity, product.Product_ID], (error, resultss) => {
+                                if (error) {
+                                    return reject(error);
+                                }
+                                resolve(resultss);
+                            });
+                        });
+                    });
+
+                    Promise.all(decreaseStockQueries)
+                        .then(() => {
+                            connection.end();
+                            return res.json({ status: "ok", message: "Order created successfully", data: results, orderId: orderId });
+                        })
+                        .catch(error => {
+                            return res.json({ message: "Error updating product stock", error });
+                        });
+                });
+            });
+        } catch (error) {
+            return res.json({ message: error.message });
+        }
+    }
+
     static async createOrder(req, res) {
         try {
             const connection = connectToMySQL();
